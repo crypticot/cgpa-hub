@@ -156,6 +156,10 @@ button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{ou
 .field-list{display:flex;flex-direction:column;gap:8px}
 .field-row{display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--surface-secondary);border-radius:10px;border:1px solid var(--border-light)}
 .field-row .form-input{background:var(--surface-tertiary)}
+.char-counter{position:absolute;right:12px;top:50%;transform:translateY(-50%);font-size:11px;font-weight:600;color:var(--text-tertiary);pointer-events:none;font-family:'Plus Jakarta Sans',sans-serif}
+.char-counter.warn{color:var(--orange-light)}
+.course-table-scroll{max-height:min(880px,60vh);overflow-y:auto}
+.course-table-scroll thead th{position:sticky;top:0;background:var(--surface-card);z-index:2;box-shadow:0 1px 0 var(--border-light)}
 
 /* ─── FILTER BAR ─────────────────────────────────────────────────── */
 .filter-bar{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
@@ -325,7 +329,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{ou
     </button>
     <a class="cotworks-link" href="https://crypticot.github.io/cotworks-portfolio/" target="_blank" rel="noopener">
       <svg class="nav-icon" viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
-      <span class="nav-label">COTworks</span>
+      <span class="nav-label">Created by COTworks</span>
     </a>
   </div>
 </aside>
@@ -434,7 +438,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{ou
         <div class="form-grid">
           <div class="form-group">
             <label class="form-label">Course</label>
-            <input class="form-input" type="text" id="courseInput" placeholder="e.g. MEE 305 - Fluid Mechanics" required/>
+            <input class="form-input" type="text" id="courseInput" placeholder="e.g. MEE 305 - Fluid Mechanics" maxlength="80" data-maxlen="80" required/>
           </div>
           <div class="form-group">
             <label class="form-label">Year</label>
@@ -446,7 +450,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{ou
           </div>
           <div class="form-group">
             <label class="form-label">Units</label>
-            <input class="form-input" type="number" id="courseUnits" min="1" value="3" required/>
+            <input class="form-input" type="number" id="courseUnits" min="1" max="12" step="0.5" value="3" required/>
           </div>
           <div class="form-group">
             <label class="form-label">Grade</label>
@@ -475,7 +479,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{ou
           <button class="link-btn" onclick="clearTableSort()">Clear sort</button>
         </div>
       </div>
-      <div class="table-wrap">
+      <div class="table-wrap course-table-scroll">
         <table class="data-table">
           <thead>
             <tr id="courseTableHead"></tr>
@@ -684,7 +688,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{ou
             <div class="accordion-body">
               <p>Go to <b>Course Records</b> and fill in the course, year, semester, units and grade. The course field takes anything, a code, a title, or both together.</p>
               <p>Use the two dropdowns above the table to narrow it down, say, to just Year 3, 1st Semester. Selecting one narrows the other to combinations that actually exist in your data.</p>
-              <p>Click a column header to sort by it. Click it again to flip direction, and a third time to clear that sort. Use <b>Clear sort</b> to go back to the original order at any time.</p>
+              <p>Click a column header to sort by it. Click it again to flip direction, and a third time to clear that sort. Clicking a different header makes it the new primary sort and pushes the previous one down to a tiebreaker — small numbered badges show each column's priority. Use <b>Clear sort</b> to go back to the original order at any time.</p>
               <p>Click the pencil icon on any row to edit that entry, or the trash icon to delete it. If you started editing by mistake, the <b>Cancel</b> button beside the form returns it to Add mode.</p>
               <p>If you took a course more than once, add it again as a new entry. Both attempts count toward your CGPA. If your school only counts one, delete the entry you don't want counted.</p>
             </div>
@@ -789,7 +793,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{ou
   </div>
   <a class="sheet-item" href="https://crypticot.github.io/cotworks-portfolio/" target="_blank" rel="noopener">
     <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
-    COTworks
+    Created by COTworks
   </a>
 </div>
 
@@ -811,7 +815,7 @@ function defaultState(){
     years:['Year 1','Year 2','Year 3','Year 4'],
     semesters:['1st Semester','2nd Semester'],
     gradeScale:[{label:'A',points:5},{label:'B',points:4},{label:'C',points:3},{label:'D',points:2},{label:'E',points:1},{label:'F',points:0}],
-    classBands:[{label:'First Class',min:4.5},{label:'Second Class Upper',min:3.5},{label:'Second Class Lower',min:2.4},{label:'Third Class',min:1.5}],
+    classBands:[{label:'First Class',min:4.5},{label:'Second Class Upper',min:3.5},{label:'Second Class Lower',min:2.4},{label:'Third Class',min:1.5},{label:'Pass',min:0}],
     courses:[],
     theme:'dark'
   };
@@ -826,7 +830,7 @@ let overviewChartInst=null, trajectoryChartInst=null, courseChartInst=null;
 function persist(){ try{ localStorage.setItem('cgpaHubState', JSON.stringify(state)); }catch(e){} }
 function loadPersisted(){
   try{ const raw=localStorage.getItem('cgpaHubState'); if(raw){ const parsed=JSON.parse(raw);
-    if(parsed && parsed.years && parsed.semesters && parsed.gradeScale && parsed.courses) state=Object.assign(defaultState(), parsed); } }catch(e){}
+    if(parsed && parsed.years && parsed.semesters && parsed.gradeScale && parsed.courses) state=Object.assign(defaultState(), parsed); if(!state.classBands.some(b=>b.min<=0)) state.classBands.push({label:'Pass',min:0}); } }catch(e){}
 }
 
 /* ═══════════════ HELPERS ═══════════════════════════════════════════ */
@@ -835,6 +839,25 @@ function genId(){ return 'c_'+Date.now().toString(36)+Math.random().toString(36)
 function ordinal(n){ const s=['th','st','nd','rd']; const v=n%100; return n+(s[(v-20)%10]||s[v]||s[0]); }
 function hexToRgba(hex,a){ const h=hex.replace('#',''); const r=parseInt(h.substring(0,2),16), g=parseInt(h.substring(2,4),16), b=parseInt(h.substring(4,6),16); return `rgba(${r},${g},${b},${a})`; }
 function truncateLabel(str,max){ max=max||28; return str.length>max ? str.slice(0,max-1)+'…' : str; }
+function initCharCounters(){
+  document.querySelectorAll('[data-maxlen]').forEach(function(inp){
+    if(inp.dataset.counted) return;
+    inp.dataset.counted='1';
+    const max=parseInt(inp.dataset.maxlen,10);
+    const wrap=document.createElement('span');
+    wrap.style.cssText='position:relative;display:flex;flex:'+(inp.style.flex||'1')+';min-width:0';
+    inp.parentNode.insertBefore(wrap,inp);
+    wrap.appendChild(inp);
+    inp.style.paddingRight='56px';
+    const counter=document.createElement('span');
+    counter.className='char-counter';
+    wrap.appendChild(counter);
+    function upd(){ const n=inp.value.length; counter.textContent=n+'/'+max; counter.classList.toggle('warn', n>=Math.ceil(max*0.8)); }
+    inp.addEventListener('input',upd);
+    inp.addEventListener('change',upd);
+    upd();
+  });
+}
 function toast(msg,isError){
   let el=document.getElementById('toastEl');
   if(!el){ el=document.createElement('div'); el.id='toastEl'; el.className='toast'; document.body.appendChild(el); }
@@ -853,7 +876,8 @@ function maxScalePoint(){ return Math.max(...state.gradeScale.map(g=>g.points), 
 function classification(cgpa){
   const bands=[...state.classBands].sort((a,b)=>b.min-a.min);
   const hit=bands.find(b=>cgpa>=b.min);
-  return hit?hit.label:'Pass';
+  if(hit) return hit.label;
+  return bands.length?bands[bands.length-1].label:'—';
 }
 function getFilteredCourses(filter){
   return state.courses.filter(c => (filter.year==null || c.yearIdx===filter.year) && (filter.sem==null || c.semIdx===filter.sem));
@@ -939,7 +963,7 @@ function loadProjectJSON(input){
     try{
       const data=JSON.parse(e.target.result);
       if(!data.years||!data.semesters||!data.gradeScale||!data.courses) throw new Error('invalid');
-      state=Object.assign(defaultState(), data);
+      state=Object.assign(defaultState(), data); if(!state.classBands.some(b=>b.min<=0)) state.classBands.push({label:'Pass',min:0});
       document.documentElement.setAttribute('data-theme', state.theme||'dark');
       tableFilter={year:null,sem:null}; chartFilter={year:null,sem:null}; tableSort=[]; chartSortMode='default';
       persist(); refreshAll(); switchView('dashboard', null);
@@ -1014,6 +1038,7 @@ function startCourseEdit(id){
   document.getElementById('courseFormSubmitText').textContent='Update';
   document.getElementById('courseFormCancelBtn').style.display='inline-flex';
   document.getElementById('courseForm').scrollIntoView({behavior:'smooth',block:'start'});
+  document.getElementById('courseInput').dispatchEvent(new Event('input'));
   document.getElementById('courseInput').focus();
 }
 
@@ -1022,6 +1047,7 @@ function cancelCourseEdit(){
 }
 
 function deleteCourse(id){
+  if(editingCourseId===id) resetCourseForm();
   state.courses = state.courses.filter(c=>c.id!==id);
   persist(); refreshAll();
   toast('Course removed.');
@@ -1056,17 +1082,17 @@ function getSortValue(c,key){
 }
 
 function sortTable(key){
-  const cur=tableSort.find(s=>s.key===key);
-  if(!cur){ tableSort=[{key,dir:'asc'}]; }
-  else if(cur.dir==='asc'){ cur.dir='desc'; }
-  else{ tableSort=[]; }
+  const idx=tableSort.findIndex(s=>s.key===key);
+  if(idx===-1){ tableSort.unshift({key,dir:'asc'}); }
+  else if(tableSort[idx].dir==='asc'){ tableSort[idx].dir='desc'; }
+  else{ tableSort.splice(idx,1); }
   renderCourseTable();
 }
 
 function clearTableSort(){ tableSort=[]; renderCourseTable(); }
 function renderCourseTableHead(){
   const tr=document.getElementById('courseTableHead');
-  tr.innerHTML = TABLE_COLS.map(col=>{
+  tr.innerHTML = '<th style="cursor:default;width:1%">#</th>' + TABLE_COLS.map(col=>{
     const sIdx=tableSort.findIndex(s=>s.key===col.key);
     let mark='';
     if(sIdx>=0){
@@ -1096,11 +1122,12 @@ function renderCourseTableBody(){
   const tbody=document.getElementById('courseTableBody');
   if(!rows.length){
     const msg = state.courses.length===0 ? "You haven't added any courses yet." : "No courses match this filter.";
-    tbody.innerHTML = `<tr class="empty-row"><td colspan="7">${msg}</td></tr>`;
+    tbody.innerHTML = `<tr class="empty-row"><td colspan="8">${msg}</td></tr>`;
     return;
   }
-  tbody.innerHTML = rows.map(c=>`
+  tbody.innerHTML = rows.map((c,i)=>`
     <tr>
+      <td class="muted">${i+1}</td>
       <td class="strong">${escapeHtml(c.course)}</td>
       <td>${escapeHtml(state.years[c.yearIdx]||'—')}</td>
       <td>${escapeHtml(state.semesters[c.semIdx]||'—')}</td>
@@ -1214,6 +1241,15 @@ function trajectoryData(){
   const semList=allSemestersChronological().map(s=>({...s, stats:statsFor(getFilteredCourses({year:s.yearIdx,sem:s.semIdx}))})).filter(s=>s.stats.units>0);
   return { labels: semList.map(s=>s.label), values: semList.map(s=>+s.stats.gpa.toFixed(2)) };
 }
+function labelMaxChars(count){
+  if(count<=4) return 18;
+  if(count<=6) return 13;
+  if(count<=8) return 10;
+  return 7;
+}
+function truncateLabel(label, max){
+  return label.length>max ? label.slice(0,max-1).trimEnd()+'…' : label;
+}
 function renderLineChart(canvasId, inst){
   const {labels,values}=trajectoryData();
   const c=chartColors();
@@ -1225,9 +1261,23 @@ function renderLineChart(canvasId, inst){
     data:{ labels, datasets:[{ data:values, borderColor:c.line, backgroundColor:c.fill, fill:true, tension:.35, pointRadius:3, pointBackgroundColor:c.line, pointBorderColor:c.line, borderWidth:2.5 }] },
     options:{
       responsive:true, maintainAspectRatio:false,
-      plugins:{ legend:{display:false}, tooltip:{ callbacks:{ label: ctx=>'GPA: '+ctx.parsed.y.toFixed(2) } } },
+      plugins:{
+        legend:{display:false},
+        tooltip:{ callbacks:{ title: items=>items[0]?.label ?? '', label: ctx=>'GPA: '+ctx.parsed.y.toFixed(2) } }
+      },
       scales:{
-        x:{ grid:{display:false}, ticks:{ color:c.text, font:{size:10.5}, maxRotation:35 } },
+        x:{
+          grid:{display:false},
+          ticks:{
+            color:c.text, font:{size:10.5},
+            maxRotation:0, minRotation:0,
+            autoSkip:true,
+            callback:function(val){
+              const full=this.getLabelForValue(val);
+              return truncateLabel(full, labelMaxChars(labels.length));
+            }
+          }
+        },
         y:{ min:0, suggestedMax:maxScalePoint(), grid:{color:c.grid}, ticks:{ color:c.text, font:{size:11} } }
       }
     }
@@ -1279,34 +1329,35 @@ function populateFormSelects(){
 function refreshDependentAfterSettingsChange(){
   populateFormSelects();
   renderYearsList(); renderSemestersList(); renderGradesList(); renderClassBandsList();
+  initCharCounters();
   renderCourseTable(); renderDashboard(); renderAnalytics();
 }
 function renderYearsList(){
   document.getElementById('yearsList').innerHTML = state.years.map((y,i)=>`
     <div class="field-row">
-      <input class="form-input" type="text" value="${escapeHtml(y)}" onchange="renameYear(${i},this.value)"/>
+      <input class="form-input" type="text" maxlength="24" data-maxlen="24" value="${escapeHtml(y)}" onchange="renameYear(${i},this.value)"/>
       <button type="button" class="btn-icon danger" onclick="removeYear(${i})" aria-label="Delete year"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg></button>
     </div>`).join('');
 }
 function renderSemestersList(){
   document.getElementById('semestersList').innerHTML = state.semesters.map((s,i)=>`
     <div class="field-row">
-      <input class="form-input" type="text" value="${escapeHtml(s)}" onchange="renameSemester(${i},this.value)"/>
+      <input class="form-input" type="text" maxlength="24" data-maxlen="24" value="${escapeHtml(s)}" onchange="renameSemester(${i},this.value)"/>
       <button type="button" class="btn-icon danger" onclick="removeSemester(${i})" aria-label="Delete semester"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg></button>
     </div>`).join('');
 }
 function renderGradesList(){
   document.getElementById('gradesList').innerHTML = state.gradeScale.map((g,i)=>`
     <div class="field-row">
-      <input class="form-input" type="text" style="flex:2" value="${escapeHtml(g.label)}" placeholder="e.g. A" onchange="renameGrade(${i},this.value)"/>
-      <input class="form-input" type="number" step="0.1" style="flex:1" value="${g.points}" placeholder="Points" onchange="updateGradePoints(${i},this.value)"/>
+      <input class="form-input" type="text" maxlength="6" data-maxlen="6" style="flex:2" value="${escapeHtml(g.label)}" placeholder="e.g. A" onchange="renameGrade(${i},this.value)"/>
+      <input class="form-input" type="number" step="0.1" min="0" max="10" style="flex:1" value="${g.points}" placeholder="Points" onchange="updateGradePoints(${i},this.value)"/>
       <button type="button" class="btn-icon danger" onclick="removeGrade(${i})" aria-label="Delete grade"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg></button>
     </div>`).join('');
 }
 function renameYear(i,val){ val=val.trim(); if(!val){ renderYearsList(); return; } state.years[i]=val; persist(); refreshDependentAfterSettingsChange(); }
 function renameSemester(i,val){ val=val.trim(); if(!val){ renderSemestersList(); return; } state.semesters[i]=val; persist(); refreshDependentAfterSettingsChange(); }
 function renameGrade(i,val){ val=val.trim(); if(!val){ renderGradesList(); return; } const old=state.gradeScale[i].label; state.gradeScale[i].label=val; state.courses.forEach(c=>{ if(c.grade===old) c.grade=val; }); persist(); refreshDependentAfterSettingsChange(); }
-function updateGradePoints(i,val){ const n=parseFloat(val); state.gradeScale[i].points=isNaN(n)?0:n; persist(); refreshDependentAfterSettingsChange(); }
+function updateGradePoints(i,val){ let n=parseFloat(val); if(isNaN(n)) n=0; n=Math.min(10,Math.max(0,n)); state.gradeScale[i].points=n; persist(); refreshDependentAfterSettingsChange(); }
 function addYear(){ state.years.push('Year '+(state.years.length+1)); persist(); refreshDependentAfterSettingsChange(); }
 function addSemester(){ state.semesters.push(ordinal(state.semesters.length+1)+' Semester'); persist(); refreshDependentAfterSettingsChange(); }
 function addGrade(){ state.gradeScale.push({label:'New Grade', points:0}); persist(); refreshDependentAfterSettingsChange(); }
@@ -1339,13 +1390,13 @@ function removeGrade(i){
 function renderClassBandsList(){
   document.getElementById('classBandsList').innerHTML = state.classBands.map((b,i)=>`
     <div class="field-row">
-      <input class="form-input" type="text" style="flex:2" value="${escapeHtml(b.label)}" placeholder="e.g. First Class" onchange="renameClassBand(${i},this.value)"/>
-      <input class="form-input" type="number" step="0.1" style="flex:1" value="${b.min}" placeholder="Min CGPA" onchange="updateClassBandMin(${i},this.value)"/>
+      <input class="form-input" type="text" maxlength="40" data-maxlen="40" style="flex:2" value="${escapeHtml(b.label)}" placeholder="e.g. First Class" onchange="renameClassBand(${i},this.value)"/>
+      <input class="form-input" type="number" step="0.1" min="0" max="10" style="flex:1" value="${b.min}" placeholder="Min CGPA" onchange="updateClassBandMin(${i},this.value)"/>
       <button type="button" class="btn-icon danger" onclick="removeClassBand(${i})" aria-label="Delete band"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg></button>
     </div>`).join('');
 }
 function renameClassBand(i,val){ val=val.trim(); if(!val){ renderClassBandsList(); return; } state.classBands[i].label=val; persist(); refreshDependentAfterSettingsChange(); }
-function updateClassBandMin(i,val){ const n=parseFloat(val); state.classBands[i].min=isNaN(n)?0:n; persist(); refreshDependentAfterSettingsChange(); }
+function updateClassBandMin(i,val){ let n=parseFloat(val); if(isNaN(n)) n=0; n=Math.min(10,Math.max(0,n)); state.classBands[i].min=n; persist(); refreshDependentAfterSettingsChange(); }
 function addClassBand(){ state.classBands.push({label:'New Band',min:0}); persist(); refreshDependentAfterSettingsChange(); }
 function removeClassBand(i){
   if(state.classBands.length<=1){ toast('You need at least one band.', true); return; }
@@ -1358,6 +1409,7 @@ function removeClassBand(i){
 function refreshAll(){
   populateFormSelects();
   renderYearsList(); renderSemestersList(); renderGradesList(); renderClassBandsList();
+  initCharCounters();
   renderCourseTable();
   renderDashboard();
   renderAnalytics();
