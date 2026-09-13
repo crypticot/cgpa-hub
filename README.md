@@ -43,8 +43,8 @@ Built entirely in vanilla HTML, CSS, and JavaScript. Just open `index.html`.
 ## Running it locally
 
 ```bash
-git clone https://github.com/crypticot/ledger-data-explorer.git
-cd ledger-data-explorer
+git clone https://github.com/crypticot/cgpa-hub.git
+cd cgpa-hub
 ```
 
 Open `index.html` in any browser. No dependencies to install, no server required.
